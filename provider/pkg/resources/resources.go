@@ -114,6 +114,31 @@ type AzureAPIResource struct {
 	DefaultProperties map[string]interface{} `json:"defaultProperties,omitempty"`
 }
 
+type TypeLookupFunc func(ref string) (*AzureAPIType, bool, error)
+
+func TraverseProperties(props map[string]AzureAPIProperty, lookupType TypeLookupFunc, f func(propName string, prop AzureAPIProperty, path []string)) {
+	// Start the traversal with an empty path and an empty set of seen types for cycle detection.
+	traverseProperties(props, lookupType, []string{}, map[string]struct{}{}, f)
+}
+
+func traverseProperties(props map[string]AzureAPIProperty, lookupType TypeLookupFunc, path []string, seen map[string]struct{}, f func(propName string, prop AzureAPIProperty, path []string)) {
+	for propName, prop := range props {
+		if prop.Ref != "" {
+			refType, ok, err := lookupType(prop.Ref)
+			if !ok || err != nil {
+				fmt.Printf("Cannot traverse properties of %s: failed to find ref %s: %v\n", propName, prop.Ref, err)
+				continue
+			}
+			if _, visited := seen[prop.Ref]; !visited {
+				seen[prop.Ref] = struct{}{}
+				traverseProperties(refType.Properties, lookupType, append(path, propName), seen, f)
+			}
+		}
+
+		f(propName, prop, path)
+	}
+}
+
 func (res *AzureAPIResource) LookupProperty(key string) (AzureAPIProperty, bool) {
 	for _, param := range res.PutParameters {
 		if param.Location == "body" {
