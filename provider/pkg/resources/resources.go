@@ -67,6 +67,9 @@ type AzureAPIProperty struct {
 	// We work around this by setting MaintainSubResourceIfUnset to true for the properties containing a list of nested resources.
 	// When updating or refreshing the parent, if the list of nested resources was not originally specified inline, we'll maintain the existing sub-resources transparently.
 	MaintainSubResourceIfUnset bool `json:"maintainSubResourceIfUnset,omitempty"`
+	// Optional. Properties that combined form a unique identifier for elements in this array.
+	// Corresponds to the x-ms-identifiers extension in the Azure spec.
+	ArrayIdentifiers []string `json:"arrayIdentifiers,omitempty"`
 }
 
 // AzureAPIType represents the shape of an object property.
